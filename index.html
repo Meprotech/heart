@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | Unity WebXR Export</title>
+    <meta name="description" content="Complete interactive 3D scene demo made in Unity and exported to WebXR with the WebXR template of the Unity WebXR Export">
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <style>
+      #shoot-button {
+        position: fixed; 
+        bottom: 20px;
+        left: 50%; 
+        transform: translateX(-50%);
+        padding: 12px 24px;
+        background: #2ecc71; 
+        color: white;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        z-index: 1000;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        white-space: nowrap; 
+      }
+      #shoot-button:hover {
+        background: #27ae60; 
+        transform: translateX(-50%) translateY(-2px); 
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+      }
+      #shoot-button:active {
+        transform: translateX(-50%) scale(0.95);
+      }
+      #shoot-button:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+      #unity-webgl-logo,
+      #enterar,
+      #unity-webxr-link,
+      #unity-build-title {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="unity-container">
+      <div id="unity-canvas-container" style="width: 100%; height: 100%;">
+        <canvas id="unity-canvas" style="width: 100%; height: 100%;"></canvas>
+      </div>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+      <div id="unity-footer">
+        <button id="entervr" value="Enter VR" disabled>VR</button>
+      </div>
+    </div>
+
+
+
+    <script>
+      // --- Parse URL Parameter ---
+      function getParameterByName(name, url) {
+          if (!url) url = window.location.href;
+          name = name.replace(/[\[\]]/g, "\\$&");
+          var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+              results = regex.exec(url);
+          if (!results) return "";
+          if (!results[2]) return "";
+          return decodeURIComponent(results[2].replace(/\+/g, " "));
+      }
+      // Read audioUrl from the URL parameter (if available)
+      var audioUrlParam = getParameterByName("audioUrl");
+      // Default audio URL if no query parameter provided.
+      var audioUrl = audioUrlParam;
+
+      // --- Unity Loader Code ---
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/WebGL.loader.js";
+      var config = {
+        dataUrl: buildUrl + "/WebGL.data",
+        frameworkUrl: buildUrl + "/WebGL.framework.js",
+        codeUrl: buildUrl + "/WebGL.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "De-Panther",
+        productName: "Unity WebXR Export",
+        productVersion: "0.1",
+      };
+
+      var container = document.querySelector("#unity-container");
+      var canvas = document.querySelector("#unity-canvas");
+      var canvasContainer = document.querySelector("#unity-canvas-container");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
+      var unityInstance = null;
+      
+
+      loadingBar.style.display = "block";
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          progressBarFull.style.width = 100 * progress + "%";
+        }).then((instance) => {
+          unityInstance = instance;
+          loadingBar.style.display = "none";
+          document.getElementById("shoot-button").disabled = false;
+          if (fullscreenButton) {
+            fullscreenButton.onclick = () => {
+              unityInstance.SetFullscreen(1);
+            };
+          }
+        }).catch((message) => {
+          alert(message);
+        });
+      };
+      document.body.appendChild(script);
+
+     script.onload = () => {
+  createUnityInstance(canvas, config, (progress) => {
+    progressBarFull.style.width = 100 * progress + "%";
+  }).then((instance) => {
+    unityInstance = instance;
+    loadingBar.style.display = "none";
+    
+    // Auto-play if audio URL exists
+    if (audioUrl) {
+      unityInstance.SendMessage('AudioManager', 'PlayAudio', audioUrl);
+    }
+    
+    if (fullscreenButton) {
+      fullscreenButton.onclick = () => {
+        unityInstance.SetFullscreen(1);
+      };
+    }
+  }).catch((message) => {
+    alert(message);
+  });
+};
+
+      let enterVRButton = document.getElementById('entervr');
+      document.addEventListener('onVRSupportedCheck', function (event) {
+        enterVRButton.disabled = !event.detail.supported;
+      }, false);
+      enterVRButton.addEventListener('click', function (event) {
+        unityInstance.Module.WebXR.toggleVR();
+      }, false);
+    </script>
+  </body>
+</html>
